@@ -12,31 +12,33 @@ class StudentController extends Controller
     {
         $students = Student::all();
 
-        $data = [
-            'message' => 'Get All Student',
-            'data'=> $students
-        ];
+        if ($students->isEmpty()) {
+            return response()->json([
+                'message' => 'No students found'
+            ], 404);
+        }
 
-        return response()->json($data, 200);
+        return response()->json([
+            'message' => 'Get All Student',
+            'data' => $students
+        ], 200);
     }
 
     public function store(Request $request)
     {
-        $input = [
-            'nama' => $request->nama,
-            'nim' => $request->nim,
-            'email' => $request->email,
-            'jurusan' => $request->jurusan,
-        ];
+        $request->validate([
+            'nama' => 'required',
+            'nim' => 'required|unique:students',
+            'email' => 'required|email|unique:students',
+            'jurusan' => 'required'
+        ]);
 
-        $student = Student::create($input);
+        $student = Student::create($request->all());
 
-        $data = [
+        return response()->json([
             'message' => 'Student is created successfully',
             'data' => $student
-        ];
-
-        return response()->json($data, 200);
+        ], 201);
     }
 
     public function update(Request $request, $id)
@@ -49,15 +51,17 @@ class StudentController extends Controller
             ], 404);
         }
 
-        $student->update([
-            'nama' => $request->nama,
-            'nim' => $request->nim,
-            'email' => $request->email,
-            'jurusan' => $request->jurusan,
+        $request->validate([
+            'nama' => 'sometimes|required',
+            'nim' => 'sometimes|required|unique:students,nim,' . $student->id,
+            'email' => 'sometimes|required|email|unique:students,email,' . $student->id,
+            'jurusan' => 'sometimes|required'
         ]);
 
+        $student->update($request->all());
+
         return response()->json([
-            'message' => 'Student is updated successfully',
+            'message' => 'Student is updated',
             'data' => $student
         ], 200);
     }
@@ -76,6 +80,22 @@ class StudentController extends Controller
 
         return response()->json([
             'message' => 'Student is deleted successfully'
+        ], 200);
+    }
+
+    public function show($id)
+    {
+        $student = Student::find($id);
+
+        if (!$student) {
+            return response()->json([
+                'message' => 'Student not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'message' => 'Get detail student',
+            'data' => $student
         ], 200);
     }
 }
